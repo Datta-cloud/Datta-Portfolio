@@ -515,3 +515,115 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   const wrap = document.querySelector('.tech-pills');
   if (wrap) obs.observe(wrap);
 })();
+
+/* ────────────────────────────────────────
+   17. PROJECT SEARCH & CATEGORY FILTERS
+──────────────────────────────────────── */
+(function initProjectControls() {
+  const tabs = document.querySelectorAll('.filter-tab');
+  const searchInput = document.getElementById('projectSearch');
+  const clearBtn = document.getElementById('searchClear');
+  const cards = document.querySelectorAll('.projects-grid .project-card');
+  const grid = document.querySelector('.projects-grid');
+
+  if (!cards.length) return;
+
+  let activeFilter = 'all';
+  let searchTerm = '';
+
+  function applyFilters() {
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+      const category = card.dataset.category || '';
+      const text = (card.textContent || '').toLowerCase();
+      const keywords = (card.dataset.keywords || '').toLowerCase();
+
+      const matchesCat = (activeFilter === 'all') || (category === activeFilter);
+      const matchesSearch = !searchTerm || text.includes(searchTerm) || keywords.includes(searchTerm);
+
+      if (matchesCat && matchesSearch) {
+        card.classList.remove('filter-hidden');
+        visibleCount++;
+      } else {
+        card.classList.add('filter-hidden');
+      }
+    });
+
+    let noResults = document.getElementById('noProjectsFound');
+    if (visibleCount === 0) {
+      if (!noResults && grid) {
+        noResults = document.createElement('div');
+        noResults.id = 'noProjectsFound';
+        noResults.className = 'no-results-msg glass-card';
+        noResults.innerHTML = `No projects found matching "<strong>${escapeHtml(searchTerm)}</strong>". <button id="resetSearchFilter" style="margin-left:12px;background:rgba(0,245,212,0.1);border:1px solid var(--primary);color:var(--primary);padding:5px 14px;border-radius:100px;cursor:pointer;font-weight:600;font-size:0.8rem;">Reset Filters</button>`;
+        grid.appendChild(noResults);
+        document.getElementById('resetSearchFilter')?.addEventListener('click', () => {
+          if (searchInput) searchInput.value = '';
+          searchTerm = '';
+          if (clearBtn) clearBtn.style.display = 'none';
+          activeFilter = 'all';
+          tabs.forEach(t => t.classList.toggle('active', t.dataset.filter === 'all'));
+          applyFilters();
+        });
+      }
+    } else if (noResults) {
+      noResults.remove();
+    }
+  }
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeFilter = tab.dataset.filter || 'all';
+      applyFilters();
+    });
+  });
+
+  if (searchInput) {
+    searchInput.addEventListener('input', e => {
+      searchTerm = e.target.value.trim().toLowerCase();
+      if (clearBtn) clearBtn.style.display = searchTerm ? 'block' : 'none';
+      applyFilters();
+    });
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      if (searchInput) {
+        searchInput.value = '';
+        searchInput.focus();
+      }
+      searchTerm = '';
+      clearBtn.style.display = 'none';
+      applyFilters();
+    });
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+  }
+})();
+
+/* ────────────────────────────────────────
+   18. ONE-CLICK EMAIL COPY
+──────────────────────────────────────── */
+(function initCopyEmail() {
+  const btn = document.getElementById('heroCopyEmail');
+  const tooltip = document.getElementById('heroCopyTooltip');
+  if (!btn) return;
+
+  btn.addEventListener('click', async () => {
+    const email = 'hadkedattatray487@gmail.com';
+    try {
+      await navigator.clipboard.writeText(email);
+      if (tooltip) {
+        tooltip.textContent = 'Copied to clipboard! ✓';
+        setTimeout(() => { tooltip.textContent = 'Copy Email'; }, 2200);
+      }
+    } catch {
+      if (tooltip) tooltip.textContent = email;
+    }
+  });
+})();
